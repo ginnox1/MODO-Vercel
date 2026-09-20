@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1789720932079,
+      "tag": "0000_left_shaman",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1789720986854,
+      "tag": "0001_confused_stone_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1789724963853,
+      "tag": "0002_cooing_cardiac",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1789725694155,
+      "tag": "0003_complex_mach_iv",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1789819451660,
+      "tag": "0004_steady_franklin_storm",
+      "breakpoints": true
+    }
+  ]
+}
