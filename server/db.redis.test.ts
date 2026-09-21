@@ -52,6 +52,7 @@ import {
   createAnalyticsEvent,
   createWaitlistEntry,
   getAnalyticsSummary,
+  getJoinRequestChatId,
   getWaitlistByDeepLinkToken,
   getWaitlistByTelegramUserId,
   linkTelegramAccount,
@@ -115,5 +116,21 @@ describe("Upstash Redis persistence", () => {
     expect(summary.waitlistSignups).toBe(1);
     expect(summary.sources).toEqual([{ label: "telegram", count: 1 }]);
     expect(entries).toHaveLength(1);
+    expect(summary.hourly).toBe(true);
+    expect(summary.series.reduce((sum, point) => sum + point.views, 0)).toBe(1);
+    expect(summary.series.reduce((sum, point) => sum + point.signups, 0)).toBe(1);
+    expect(summary.funnel).toEqual([
+      { stage: "Signed up", count: 1 },
+      { stage: "Linked bot", count: 0 },
+      { stage: "Requested", count: 0 },
+      { stage: "Joined", count: 0 },
+    ]);
+  });
+
+  it("remembers which channel a member asked to join so the dashboard can approve them", async () => {
+    const created = await createWaitlistEntry({ fullName: "Marta Fekadu", phone: "0911234567" });
+    expect(await getJoinRequestChatId(created.id)).toBeUndefined();
+    await markJoinRequested(created.id, "-1001234567890");
+    expect(await getJoinRequestChatId(created.id)).toBe("-1001234567890");
   });
 });

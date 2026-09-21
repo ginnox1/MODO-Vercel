@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter.js";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc.js";
 import { createAnalyticsEvent, createWaitlistEntry, getAnalyticsSummary, listWaitlistEntries } from "./db.js";
 import { ENV } from "./_core/env.js";
+import { approveWaitlistMember } from "./telegram.js";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
@@ -44,6 +45,13 @@ export const appRouter = router({
         };
       }),
     list: adminProcedure.query(() => listWaitlistEntries()),
+    approve: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input }) => {
+      try {
+        return await approveWaitlistMember(input.id);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Approval failed" });
+      }
+    }),
   }),
   analytics: router({
     record: publicProcedure.input(z.object({ eventName: z.string().trim().min(1).max(64), source: z.string().trim().max(120).default("direct"), browser: z.string().trim().max(64).default("unknown"), location: z.string().trim().max(120).default("unknown"), path: z.string().trim().max(255), referrer: z.string().trim().max(512).optional() })).mutation(({ input }) => createAnalyticsEvent({ ...input, referrer: input.referrer ?? null })),

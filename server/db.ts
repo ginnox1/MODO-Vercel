@@ -8,6 +8,7 @@ const userKey = (openId: string) => `${KEY_PREFIX}:user:${openId}`;
 const waitlistKey = (id: number) => `${KEY_PREFIX}:waitlist:${id}`;
 const deepLinkKey = (token: string) => `${KEY_PREFIX}:waitlist:deep-link:${token}`;
 const telegramKey = (telegramUserId: string) => `${KEY_PREFIX}:waitlist:telegram:${telegramUserId}`;
+const joinChatKey = (id: number) => `${KEY_PREFIX}:waitlist:join-chat:${id}`;
 const analyticsKey = (id: number) => `${KEY_PREFIX}:analytics:${id}`;
 const waitlistIndexKey = `${KEY_PREFIX}:waitlist:created`;
 const analyticsIndexKey = `${KEY_PREFIX}:analytics:created`;
@@ -150,10 +151,21 @@ export async function linkTelegramAccount(id: number, telegramUserId: string, te
   await getRedis().set(telegramKey(telegramUserId), String(id));
 }
 
-export async function markJoinRequested(id: number) {
+export async function markJoinRequested(id: number, joinChatId?: string) {
   const entry = await getWaitlistById(id);
   if (!entry) return;
   await saveWaitlistEntry({ ...entry, onboardingStatus: "JOIN_REQUESTED", joinRequestedAt: new Date() });
+  if (joinChatId) await getRedis().set(joinChatKey(id), joinChatId);
+}
+
+/** The channel a member asked to join, recorded from their chat_join_request so approval needs no extra config. */
+export async function getJoinRequestChatId(id: number) {
+  const chatId = await getRedis().get<string | number>(joinChatKey(id));
+  return chatId === null ? undefined : String(chatId);
+}
+
+export async function getWaitlistEntry(id: number) {
+  return getWaitlistById(id);
 }
 
 export async function markTelegramJoined(telegramUserId: string) {
@@ -185,12 +197,38 @@ export async function getAnalyticsSummary(since: Date) {
     const event = await redis.get<AnalyticsEvent>(analyticsKey(Number(id)));
     return event ? reviveAnalytics(event) : undefined;
   }))).filter((event): event is AnalyticsEvent => Boolean(event));
-  const signups = (await listWaitlistEntries()).filter((entry) => entry.createdAt >= since);
+  const allEntries = await listWaitlistEntries();
+  const signups = allEntries.filter((entry) => entry.createdAt >= since);
   const pageViews = events.filter((event) => event.eventName === "page-view");
   const countBy = (key: "source" | "browser" | "location") => Object.entries(pageViews.reduce<Record<string, number>>((acc, event) => {
     acc[event[key]] = (acc[event[key]] ?? 0) + 1;
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count })).slice(0, 8);
+
+  // Hourly buckets for the "Today" view, daily otherwise. Keys are UTC ISO prefixes so they sort and compare as strings.
+  const hourly = Date.now() - since.getTime() <= 36 * 60 * 60 * 1000;
+  const bucketKey = (date: Date) => date.toISOString().slice(0, hourly ? 13 : 10);
+  const step = hourly ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  const series = new Map<string, { bucket: string; views: number; signups: number }>();
+  for (let t = Math.floor(since.getTime() / step) * step; t <= Date.now(); t += step) {
+    const bucket = bucketKey(new Date(t));
+    series.set(bucket, { bucket, views: 0, signups: 0 });
+  }
+  for (const event of pageViews) {
+    const point = series.get(bucketKey(event.createdAt));
+    if (point) point.views += 1;
+  }
+  for (const entry of signups) {
+    const point = series.get(bucketKey(entry.createdAt));
+    if (point) point.signups += 1;
+  }
+
+  const funnel = [
+    { stage: "Signed up", count: allEntries.length },
+    { stage: "Linked bot", count: allEntries.filter((entry) => entry.telegramUserId).length },
+    { stage: "Requested", count: allEntries.filter((entry) => entry.joinRequestedAt || entry.onboardingStatus === "JOINED_TG").length },
+    { stage: "Joined", count: allEntries.filter((entry) => entry.onboardingStatus === "JOINED_TG").length },
+  ];
 
   return {
     totalViews: pageViews.length,
@@ -199,5 +237,8 @@ export async function getAnalyticsSummary(since: Date) {
     browsers: countBy("browser"),
     locations: countBy("location"),
     recentEvents: events.slice(0, 12),
+    hourly,
+    series: Array.from(series.values()),
+    funnel,
   };
 }

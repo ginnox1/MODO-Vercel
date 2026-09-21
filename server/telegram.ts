@@ -1,7 +1,9 @@
 import { ENV } from "./_core/env.js";
 import {
+  getJoinRequestChatId,
   getWaitlistByDeepLinkToken,
   getWaitlistByTelegramUserId,
+  getWaitlistEntry,
   linkTelegramAccount,
   markJoinRequested,
   markTelegramJoined,
@@ -60,7 +62,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
         : `MODO join request (not linked to a waitlist signup)\n${displayName(request.from)}\nTelegram: ${handle} (id ${request.from.id})\nThey did not open the bot from the website link, so we can't match them to a signup. Approve in Telegram if you recognise them.`)],
       ["message requester", () => sendTelegramMessage(request.user_chat_id, "Your request to join MODO Founder's Circle is with the founder for approval. We’ll message you here when it’s approved.")],
     ];
-    if (member) steps.unshift(["mark join requested", () => markJoinRequested(member.id)]);
+    if (member) steps.unshift(["mark join requested", () => markJoinRequested(member.id, String(request.chat.id))]);
     for (const [label, run] of steps) {
       try {
         await run();
@@ -73,8 +75,10 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   if (update.chat_member?.new_chat_member?.status === "member") {
     const joinedUser = update.chat_member.new_chat_member.user;
+    const before = await getWaitlistByTelegramUserId(String(joinedUser.id));
     await markTelegramJoined(String(joinedUser.id));
-    const member = await getWaitlistByTelegramUserId(String(joinedUser.id));
+    // Dashboard approvals already confirm to the member, so only announce a first transition to JOINED_TG.
+    const member = before?.onboardingStatus === "JOINED_TG" ? undefined : before;
     if (member) {
       await sendTelegramMessage(joinedUser.id, "You’re in. Welcome to MODO Founder's Circle — we’ll share the first product wave here soon.");
       await notifyFounder(`MODO member joined\n${member.fullName}\nTelegram: @${joinedUser.username || "no username"}\nStatus: JOINED_TG`);
@@ -120,6 +124,27 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   await sendTelegramMessage(chatId, "Welcome to MODO. Use /help to see what you can do here.");
   return { handled: true, event: "fallback" } as const;
+}
+
+export async function approveWaitlistMember(id: number) {
+  const member = await getWaitlistEntry(id);
+  if (!member) throw new Error("Member not found");
+  if (member.onboardingStatus === "JOINED_TG") throw new Error("This member has already joined the channel");
+  if (!member.telegramUserId) throw new Error("This member has not linked Telegram yet");
+  const chatId = await getJoinRequestChatId(id);
+  if (!chatId) throw new Error("No pending join request is recorded for this member. Approve them in Telegram instead.");
+
+  await telegramApi("approveChatJoinRequest", { chat_id: chatId, user_id: Number(member.telegramUserId) });
+  await markTelegramJoined(member.telegramUserId);
+
+  let notified = true;
+  try {
+    await sendTelegramMessage(member.telegramChatId || member.telegramUserId, "You’re in. Welcome to MODO Founder's Circle — we’ll share the first product wave here soon.");
+  } catch (error) {
+    console.error("[Telegram] approval confirmation failed:", error);
+    notified = false;
+  }
+  return { success: true, notified } as const;
 }
 
 export async function registerTelegramWebhookWithTelegram() {

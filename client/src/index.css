@@ -399,3 +399,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .telegram-start-button:hover { background: var(--rust); color: var(--cream); transform: translateY(-1px); }
 .telegram-start-button:active { transform: scale(.98); }
 @media (max-width: 700px) { .telegram-start-button { font-size: 10px; } }
+
+.analytics-charts { display: grid; gap: 22px; grid-template-columns: 3fr 2fr; padding-top: 22px; }
+.analytics-chart { min-width: 0; }
+.analytics-chart h3 { color: var(--rust); font-family: var(--mono); font-size: 9px; font-weight: 400; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
+.admin-status { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-status-pill { border: 1px solid var(--line); color: var(--ink-soft); font-family: var(--mono); font-size: 9px; letter-spacing: .04em; padding: 4px 7px; text-transform: uppercase; white-space: nowrap; }
+.admin-status-pill.attention { border-color: var(--rust); color: var(--rust); }
+.admin-approve { align-items: center; background: var(--rust); color: #fff; display: inline-flex; font-family: var(--mono); font-size: 9px; gap: 5px; letter-spacing: .05em; padding: 5px 9px; text-transform: uppercase; }
+.admin-approve:disabled { cursor: wait; opacity: .6; }
+@media (max-width: 720px) { .analytics-charts { grid-template-columns: 1fr; } }
