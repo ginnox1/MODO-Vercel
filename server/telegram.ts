@@ -37,7 +37,10 @@ export async function sendTelegramMessage(chatId: number | string, text: string,
 }
 
 export async function notifyFounder(text: string) {
-  if (!ENV.telegramAdminChatId) return;
+  if (!ENV.telegramAdminChatId) {
+    console.error("[Telegram] TELEGRAM_ADMIN_CHAT_ID is not set; founder notification skipped");
+    return;
+  }
   await sendTelegramMessage(ENV.telegramAdminChatId, text);
 }
 
@@ -49,10 +52,21 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   if (update.chat_join_request) {
     const request = update.chat_join_request;
     const member = await getWaitlistByTelegramUserId(String(request.from.id));
-    if (member) {
-      await markJoinRequested(member.id);
-      await notifyFounder(`MODO join request\n${member.fullName}\nTelegram: @${request.from.username || "no username"}\nStatus: awaiting your approval.`);
-      await sendTelegramMessage(request.user_chat_id, "Your request to join MODO Founder's Circle is with the founder for approval. We’ll message you here when it’s approved.");
+    const handle = `@${request.from.username || "no username"}`;
+    // Each step is isolated so one failure (e.g. a wrong admin chat id) never blocks the others.
+    const steps: Array<[string, () => Promise<unknown>]> = [
+      ["notify founder", () => notifyFounder(member
+        ? `MODO join request\n${member.fullName}\nTelegram: ${handle}\nStatus: awaiting your approval.`
+        : `MODO join request (not linked to a waitlist signup)\n${displayName(request.from)}\nTelegram: ${handle} (id ${request.from.id})\nThey did not open the bot from the website link, so we can't match them to a signup. Approve in Telegram if you recognise them.`)],
+      ["message requester", () => sendTelegramMessage(request.user_chat_id, "Your request to join MODO Founder's Circle is with the founder for approval. We’ll message you here when it’s approved.")],
+    ];
+    if (member) steps.unshift(["mark join requested", () => markJoinRequested(member.id)]);
+    for (const [label, run] of steps) {
+      try {
+        await run();
+      } catch (error) {
+        console.error(`[Telegram] join request: failed to ${label}:`, error);
+      }
     }
     return { handled: true, event: "chat_join_request" } as const;
   }
