@@ -419,3 +419,4 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .admin-approve { align-items: center; background: var(--rust); color: #fff; display: inline-flex; font-family: var(--mono); font-size: 9px; gap: 5px; letter-spacing: .05em; padding: 5px 9px; text-transform: uppercase; }
 .admin-approve:disabled { cursor: wait; opacity: .6; }
 @media (max-width: 720px) { .analytics-charts { grid-template-columns: 1fr; } }
+.admin-status-hint { color: var(--ink-soft); flex-basis: 100%; font-size: 10px; line-height: 1.4; }

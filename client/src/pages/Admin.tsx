@@ -86,16 +86,23 @@ const STATUS_LABELS: Record<string, string> = {
   PAID: "Paid",
 };
 
+const STATUS_HINTS: Record<string, string> = {
+  PENDING_TG: "Approve appears once they ask to join the channel.",
+  UNLINKED: "Hasn't opened the bot from the website link yet.",
+  JOINED_TG: "Already approved.",
+};
+
 function StatusCell({ status, linked, pending, onApprove }: { status: string; linked: boolean; pending: boolean; onApprove: () => void }) {
   const label = status === "PENDING_TG" && linked ? "Linked, not requested" : STATUS_LABELS[status] ?? status;
+  const hint = status === "PENDING_TG" && !linked ? STATUS_HINTS.UNLINKED : STATUS_HINTS[status];
   return (
     <div className="admin-status">
       <span className={`admin-status-pill ${status === "JOIN_REQUESTED" ? "attention" : ""}`}>{label}</span>
-      {status === "JOIN_REQUESTED" && (
+      {status === "JOIN_REQUESTED" ? (
         <button type="button" className="admin-approve" onClick={onApprove} disabled={pending}>
           {pending ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Approve
         </button>
-      )}
+      ) : hint ? <span className="admin-status-hint">{hint}</span> : null}
     </div>
   );
 }
