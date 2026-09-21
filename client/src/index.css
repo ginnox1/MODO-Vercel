@@ -127,10 +127,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .modo-logo { align-items: center; display: inline-flex; font-size: 15px; font-weight: 800; gap: 9px; letter-spacing: .17em; }
 .modo-logo-mark { align-items: center; background: var(--ink); color: var(--cream); display: inline-flex; font-family: var(--display); font-size: 18px; height: 29px; justify-content: center; letter-spacing: 0; width: 29px; }
 .modo-nav-links { display: flex; font-size: 12px; gap: 30px; letter-spacing: .03em; margin-left: 12%; }
-.modo-nav-links a, .nav-login, .modo-footer button { transition: color 160ms ease, transform 160ms ease; }
+.modo-nav-links a, .modo-footer button { transition: color 160ms ease, transform 160ms ease; }
 .modo-nav-links a:hover, .modo-footer button:hover { color: var(--rust); }
-.nav-login { align-items: center; background: transparent; color: var(--ink); display: inline-flex; font-size: 11px; font-weight: 700; gap: 7px; letter-spacing: .04em; padding: 9px 0; }
-.nav-login:hover { color: var(--rust); transform: translateY(-1px); }
 
 .modo-hero { display: grid; grid-template-columns: minmax(360px, 0.85fr) minmax(460px, 1.15fr); height: calc(100dvh - 78px); min-height: calc(100dvh - 78px); max-height: calc(100dvh - 78px); max-width: 1440px; margin: 0 auto; padding: 20px 5.8vw 28px; position: relative; overflow: hidden; gap: 3rem; align-items: center; }
 .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 10px 0; position: relative; z-index: 2; width: 100%; }
@@ -265,7 +263,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 @media (max-width: 700px) {
   .modo-nav { height: 68px; padding: 0 20px; }
   .modo-nav-links { display: none; }
-  .nav-login { font-size: 10px; }
   .modo-hero { display: flex; flex-direction: column; height: auto; min-height: 0; max-height: none; overflow: visible; padding: 16px 20px 32px; gap: 20px; }
   .hero-copy { padding: 10px 0 0; }
   .hero-copy h1 { font-size: clamp(32px, 8.5vw, 42px); max-width: 100%; }

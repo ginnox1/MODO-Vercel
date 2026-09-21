@@ -32,7 +32,6 @@ const copy = {
     // Navigation
     idea: "The idea",
     founding: "Founding members",
-    login: "Member login",
     themeLight: "LIGHT",
     themeDark: "DARK",
 
@@ -99,7 +98,6 @@ const copy = {
     // Navigation
     idea: "ሀሳቡ",
     founding: "የመጀመሪያ አባላት",
-    login: "የቤተሰብ መግቢያ",
     themeLight: "ብርሃን",
     themeDark: "ጨለማ",
 
@@ -249,9 +247,6 @@ export default function Home() {
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             <span>{theme === "dark" ? content.themeLight : content.themeDark}</span>
-          </button>
-          <button className="nav-login" type="button" onClick={() => { trackEvent("login-click"); startLogin(); }}>
-            {content.login} <ArrowUpRight size={15} strokeWidth={2.3} />
           </button>
         </nav>
       </header>

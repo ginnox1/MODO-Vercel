@@ -1,6 +1,6 @@
 import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
-/** Core user table backing Manus OAuth and admin role checks. */
+/** User record shape for Google sign-in (the app persists it in Redis; see server/db.ts). */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),

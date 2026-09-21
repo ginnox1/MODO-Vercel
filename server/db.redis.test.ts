@@ -69,7 +69,6 @@ describe("Upstash Redis persistence", () => {
     state.sequences.clear();
     ENV.redisRestUrl = "https://redis.test";
     ENV.redisRestToken = "test-token";
-    ENV.ownerOpenId = "owner-7";
   });
 
   it("persists and retrieves a waitlist entry through its deep-link index", async () => {
@@ -100,7 +99,7 @@ describe("Upstash Redis persistence", () => {
   });
 
   it("preserves admin identity and aggregates date-filtered analytics", async () => {
-    await upsertUser({ openId: "owner-7", name: "Owner" });
+    await upsertUser({ openId: "owner-7", name: "Owner", role: "admin" });
     await createWaitlistEntry({ fullName: "Marta Fekadu", phone: "0911234567" });
     await createAnalyticsEvent({ eventName: "page-view", source: "telegram", browser: "Chrome", location: "Addis Ababa", path: "/", referrer: null });
     await createAnalyticsEvent({ eventName: "waitlist-signup", source: "telegram", browser: "Chrome", location: "Addis Ababa", path: "/", referrer: null });
@@ -110,6 +109,8 @@ describe("Upstash Redis persistence", () => {
     const entries = await listWaitlistEntries();
 
     expect(owner?.role).toBe("admin");
+    await upsertUser({ openId: "owner-7", name: "Owner Renamed" });
+    expect((await getUserByOpenId("owner-7"))?.role).toBe("admin");
     expect(summary.totalViews).toBe(1);
     expect(summary.waitlistSignups).toBe(1);
     expect(summary.sources).toEqual([{ label: "telegram", count: 1 }]);

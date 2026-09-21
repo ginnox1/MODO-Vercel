@@ -2,6 +2,7 @@
   "buildCommand": "pnpm build:client",
   "outputDirectory": "dist/public",
   "framework": "vite",
+  "regions": ["fra1"],
   "functions": {
     "api/index.ts": {
       "maxDuration": 60

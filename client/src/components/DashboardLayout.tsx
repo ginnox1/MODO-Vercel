@@ -33,6 +33,13 @@ const menuItems = [
   { icon: Users, label: "Public MODO page", path: "/" },
 ];
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  forbidden: "That Google account is not authorized for this dashboard.",
+  cancelled: "Sign-in was cancelled.",
+  failed: "Sign-in failed. Please try again.",
+  config: "Google sign-in is not configured on this deployment.",
+};
+
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
@@ -48,6 +55,7 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const authError = AUTH_ERROR_MESSAGES[new URLSearchParams(window.location.search).get("auth_error") ?? ""];
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -66,15 +74,20 @@ export default function DashboardLayout({
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              This dashboard is restricted to the MODO owner. Continue with your Google account.
             </p>
+            {authError && (
+              <p role="alert" className="text-sm font-medium text-red-700 text-center max-w-sm">
+                {authError}
+              </p>
+            )}
           </div>
           <Button
             onClick={() => startLogin()}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >
-            Sign in
+            Sign in with Google
           </Button>
         </div>
       </div>

@@ -67,7 +67,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     name: user.name !== undefined ? user.name : existing?.name ?? null,
     email: user.email !== undefined ? user.email : existing?.email ?? null,
     loginMethod: user.loginMethod !== undefined ? user.loginMethod : existing?.loginMethod ?? null,
-    role: user.role ?? (user.openId === ENV.ownerOpenId ? "admin" : existing?.role ?? "user"),
+    role: user.role ?? existing?.role ?? "user",
     createdAt: existing?.createdAt ? reviveDate(existing.createdAt) : now,
     updatedAt: now,
     lastSignedIn: user.lastSignedIn ? reviveDate(user.lastSignedIn) : now,
