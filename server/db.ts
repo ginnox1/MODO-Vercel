@@ -1,7 +1,7 @@
 import { Redis } from "@upstash/redis";
 import { nanoid } from "nanoid";
 import type { AnalyticsEvent, InsertUser, InsertWaitlistEntry, User, WaitlistEntry } from "../drizzle/schema";
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 
 const KEY_PREFIX = "modo";
 const userKey = (openId: string) => `${KEY_PREFIX}:user:${openId}`;

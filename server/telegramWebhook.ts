@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
-import { ENV } from "./_core/env";
-import { handleTelegramUpdate, TelegramUpdate } from "./telegram";
+import { ENV } from "./_core/env.js";
+import { handleTelegramUpdate, type TelegramUpdate } from "./telegram.js";
 
 export function registerTelegramWebhook(app: Express) {
   app.post("/api/telegram/webhook", async (req: Request, res: Response) => {

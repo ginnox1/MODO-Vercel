@@ -1,11 +1,11 @@
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 import {
   getWaitlistByDeepLinkToken,
   getWaitlistByTelegramUserId,
   linkTelegramAccount,
   markJoinRequested,
   markTelegramJoined,
-} from "./db";
+} from "./db.js";
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type TelegramChat = { id: number | string; type?: string };

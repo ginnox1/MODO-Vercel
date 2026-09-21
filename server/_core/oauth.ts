@@ -1,12 +1,12 @@
-import { COOKIE_NAME, OAUTH_STATE_COOKIE, SESSION_DURATION_MS } from "@shared/const";
+import { COOKIE_NAME, OAUTH_STATE_COOKIE, SESSION_DURATION_MS } from "../../shared/const.js";
 import { parse as parseCookieHeader } from "cookie";
 import { randomBytes } from "node:crypto";
 import type { CookieOptions, Express, Request, Response } from "express";
-import * as db from "../db";
-import { getSessionCookieOptions } from "./cookies";
-import { ENV, isAdminEmail } from "./env";
-import { buildGoogleAuthUrl, exchangeGoogleCode } from "./google";
-import { sdk } from "./sdk";
+import * as db from "../db.js";
+import { getSessionCookieOptions } from "./cookies.js";
+import { ENV, isAdminEmail } from "./env.js";
+import { buildGoogleAuthUrl, exchangeGoogleCode } from "./google.js";
+import { sdk } from "./sdk.js";
 
 const CALLBACK_PATH = "/api/oauth/callback";
 const ADMIN_PATH = "/admiin";
