@@ -4,7 +4,8 @@ type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
@@ -19,12 +20,17 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultTheme = "light",
-  switchable = false,
+  switchable = true,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("modo-theme") || localStorage.getItem("theme");
+      if (stored === "dark" || stored === "light") {
+        return stored;
+      }
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
     }
     return defaultTheme;
   });
@@ -38,18 +44,21 @@ export function ThemeProvider({
     }
 
     if (switchable) {
+      localStorage.setItem("modo-theme", theme);
       localStorage.setItem("theme", theme);
     }
   }, [theme, switchable]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+  };
+
+  const toggleTheme = () => {
+    setThemeState(prev => (prev === "light" ? "dark" : "light"));
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -62,3 +71,4 @@ export function useTheme() {
   }
   return context;
 }
+

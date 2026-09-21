@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Download, ShieldCheck } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ArrowLeft, Download, Moon, ShieldCheck, Sun } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Admin() {
+  const { theme, toggleTheme } = useTheme();
   const { user, loading } = useAuth();
   const [days, setDays] = useState<1 | 7 | 30 | 90>(7);
   const entries = trpc.waitlist.list.useQuery(undefined, { enabled: Boolean(user?.role === "admin"), retry: false });
@@ -20,7 +22,19 @@ export default function Admin() {
             <h1>Founding circle</h1>
             <p>Review the people who want to make room with MODO.</p>
           </div>
-          <Link className="admin-back" href="/"><ArrowLeft size={16} /> Back to MODO</Link>
+          <div className="flex items-center gap-4">
+            <button
+              className="theme-toggle"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              <span>{theme === "dark" ? "LIGHT" : "DARK"}</span>
+            </button>
+            <Link className="admin-back" href="/"><ArrowLeft size={16} /> Back to MODO</Link>
+          </div>
         </header>
         {loading ? <div className="admin-empty">Checking access…</div> : user?.role !== "admin" ? (
           <div className="admin-empty"><ShieldCheck size={28} /><h2>Admin access required</h2><p>This area is reserved for the MODO owner account.</p></div>

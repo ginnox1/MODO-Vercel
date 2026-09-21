@@ -1,7 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowUpRight, Check, ChevronDown, LockKeyhole, Move3D, Phone, Sparkles } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, LockKeyhole, Move3D, Moon, Phone, Sparkles, Sun } from "lucide-react";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { useTheme } from "@/contexts/ThemeContext";
+
+import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 
 function trackEvent(name: string, data?: Record<string, unknown>) {
   const analytics = (window as Window & { umami?: { track?: (event: string, data?: Record<string, unknown>) => void } }).umami;
@@ -26,14 +29,143 @@ type Language = "en" | "am";
 
 const copy = {
   en: {
-    idea: "The idea", founding: "Founding members", login: "Member login", designed: "Designed in Addis Ababa", intro: "Furniture that shifts with your day, your room, and the way you actually live.", join: "Join the founding circle", note: "For smaller rooms. For bigger ideas.", folds: "folds away", stays: "stays beautiful", caption: <>An armchair, a daybed,<br />a little more possibility.</>, ideaKicker: "The MODO idea", ideaTitle: <>One room.<br /><span>Many versions</span><br />of you.</>, ideaLead: "In Addis, every square metre has a job. MODO makes furniture that understands the assignment.", ideaBody: "We design considered pieces that open, tuck, stack, and transform — so your home can move from morning coffee to guests, work, rest, and back again.", detailOne: "Thoughtful proportions for real rooms", detailTwo: "Locally minded materials and making", glimpse: "A first glimpse", previewTitle: <>Three ways<br /><span>MODO makes room.</span></>, previewIntro: "Small pieces of a collection designed to move with you.", fold: "Fold", foldText: "Furniture that disappears when you need space.", shift: "Shift", shiftText: "Pieces that move from work to rest.", stay: "Stay", stayText: "Simple forms designed for everyday living.", collection: "First collection coming soon.", circle: "Join the founding circle", firstCircle: "A small first circle", foundingTitle: <>Be part of<br /><em>what fits next.</em></>, foundingBody: "We’re inviting a small group of founding members to shape the first MODO collection. Get early access, founding prices, and a say in what we make.", invitation: "Founding member invitation", homeTitle: <>Make MODO part<br />of your home.</>, fullName: "Full name", phone: "Phone number", submit: "Join the founding circle", saving: "Saving your spot…", telegram: "Send launch updates on Telegram", optionalHandle: "Optional Telegram username", privacy: "No spam. Just good furniture news.", successLabel: "You’re on the list.", successTitle: <>Welcome to the<br />founding circle.</>, successBody: "We’ll be in touch soon with the first look at MODO.", addAnother: "Add another person", footer: "Furniture that makes space for life.", privateArea: "Private member area", validation: "Please add your full name and phone number.", error: "Something went wrong. Please try again."
+    // Navigation
+    idea: "The idea",
+    founding: "Founding members",
+    login: "Member login",
+    themeLight: "LIGHT",
+    themeDark: "DARK",
+
+    // Hero Section
+    designed: "Designed in Addis Ababa",
+    intro: "Furniture that shifts with your day, your room, and the way you actually live.",
+    join: "Join the founding circle",
+    note: "For smaller rooms, and bigger life styles.",
+    folds: "folds away",
+    stays: "stays beautiful",
+    caption: <>A workspace, a meditation corner,<br />a little more possibility.</>,
+    heroHighlightFold: "Wall-mounted & Foldable",
+    heroHighlightAddis: "Crafted with Care",
+    heroBadgeFold: "Foldable & Space-saving",
+    heroBadgeWork: "Unfolds as Workspace",
+    heroScroll: "Scroll to explore",
+
+    // Idea Section
+    ideaKicker: "The MODO idea",
+    ideaTitle: <>One room.<br /><span>Many versions</span><br />of you.</>,
+    ideaLead: "In Addis, every square metre has a job. MODO makes furniture that understands the assignment.",
+    ideaBody: "We design considered pieces that open, tuck, stack, and transform — so your home can move from morning coffee to guests, work, rest, and back again.",
+    detailOne: "Thoughtful proportions for real rooms",
+    detailTwo: "Locally minded materials and making",
+
+    // Preview Pillars
+    glimpse: "A first glimpse",
+    previewTitle: <>Three ways<br /><span>MODO makes room.</span></>,
+    previewIntro: "Small pieces of a collection designed to move with you.",
+    fold: "Fold",
+    foldText: "Furniture that disappears when you need space.",
+    shift: "Shift",
+    shiftText: "Pieces that move from work to rest.",
+    stay: "Stay",
+    stayText: "Simple forms designed for everyday living.",
+    collection: "Inspirations for first collection coming soon.",
+    circle: "Join the founding circle",
+
+    // Founding Member Waitlist Form
+    firstCircle: "A small first circle",
+    foundingTitle: <>Be part of<br /><em>what fits next.</em></>,
+    foundingBody: "We’re inviting a small group of founding members to shape the first MODO collection. Get early access, founding prices, and a say in what we make.",
+    invitation: "Founding member invitation",
+    homeTitle: <>Make MODO part<br />of your home.</>,
+    fullName: "Full name",
+    phone: "Phone number",
+    submit: "Join the founding circle",
+    saving: "Saving your spot…",
+    telegram: "Send launch updates on Telegram",
+    optionalHandle: "Optional Telegram username",
+    privacy: "No spam. Just good furniture news.",
+    successLabel: "You’re on the list.",
+    successTitle: <>Welcome to the<br />founding circle.</>,
+    successBody: "We’ll be in touch soon with the first look at MODO.",
+    addAnother: "Add another person",
+
+    // Footer & Validation
+    footer: "Furniture that makes space for life.",
+    privateArea: "Private member area",
+    validation: "Please add your full name and phone number.",
+    error: "Something went wrong. Please try again."
   },
   am: {
-    idea: "ሀሳቡ", founding: "የመጀመሪያ አባላት", login: "የአባል መግቢያ", designed: "በአዲስ አበባ የተነደፈ", intro: "ከዕለት ተዕለት ሕይወትዎ፣ ከክፍልዎ እና ከአኗኗርዎ ጋር የሚለዋወጥ የቤት ዕቃ።", join: "የመጀመሪያ አባላትን ይቀላቀሉ", note: "ለትንንሽ ክፍሎች። ለትልቅ ሀሳቦች።", folds: "ይታጠፋል", stays: "ውበቱን ይጠብቃል", caption: <>የእጅ ወንበር፣ የቀን አልጋ፣<br />እና ትንሽ ተጨማሪ እድል።</>, ideaKicker: "የMODO ሀሳብ", ideaTitle: <>አንድ ክፍል።<br /><span>ብዙ የእርስዎ</span><br />ገጽታዎች።</>, ideaLead: "በአዲስ አበባ እያንዳንዱ ካሬ ሜትር የራሱ ሚና አለው። MODO ይህን የሚረዳ የቤት ዕቃ ይነድፋል።", ideaBody: "እንዲከፈቱ፣ እንዲደበቁ፣ እንዲደረደሩ እና እንዲለወጡ የተነደፉ ዕቃዎችን እንሰራለን—ቤትዎ ከጠዋት ቡና ወደ እንግዳ፣ ሥራ፣ እረፍት እና እንደገና ወደ ሌላ ቅርጽ እንዲሸጋገር።", detailOne: "ለእውነተኛ ክፍሎች የተመጠነ ቅርጽ", detailTwo: "አካባቢያዊ ቁሳቁስና አሰራር", glimpse: "የመጀመሪያ ጨረፍታ", previewTitle: <>MODO ቦታን<br /><span>የሚያዘጋጅባቸው ሦስት መንገዶች።</span></>, previewIntro: "ከእርስዎ ጋር እንዲለዋወጥ የተነደፈ ስብስብ ትንሽ ጨረፍታ።", fold: "መታጠፍ", foldText: "ቦታ ሲፈልጉ የሚጠፋ የቤት ዕቃ።", shift: "መቀየር", shiftText: "ከሥራ ወደ እረፍት የሚሸጋገሩ ዕቃዎች።", stay: "መቆየት", stayText: "ለዕለታዊ ኑሮ የተነደፉ ቀላል ቅርጾች።", collection: "የመጀመሪያው ስብስብ በቅርቡ።", circle: "የመጀመሪያ አባላትን ይቀላቀሉ", firstCircle: "ትንሽ የመጀመሪያ ቡድን", foundingTitle: <>ቀጣዩ የሚስማማው<br /><em>ነገር አካል ይሁኑ።</em></>, foundingBody: "የመጀመሪያውን MODO ስብስብ እንዲቀርጹ ትንሽ የመጀመሪያ አባላት ቡድን እየጋበዝን ነው። ቀድመው ይድረሱ፣ በመጀመሪያ ዋጋ ይግዙ፣ በምንሰራውም ላይ ድምጽዎን ያሰሙ።", invitation: "የመጀመሪያ አባል ግብዣ", homeTitle: <>MODOን<br />የቤትዎ አካል ያድርጉ።</>, fullName: "ሙሉ ስም", phone: "ስልክ ቁጥር", submit: "የመጀመሪያ አባላትን ይቀላቀሉ", saving: "ቦታዎ እየተያዘ ነው…", telegram: "የMODO የመጀመሪያ ዜናዎችን በTelegram ይቀበሉ", optionalHandle: "የTelegram ስም (አማራጭ)", privacy: "አይረብሽም። ጥሩ የቤት ዕቃ ዜና ብቻ።", successLabel: "በዝርዝሩ ውስጥ ነዎት።", successTitle: <>ወደ የመጀመሪያ<br />አባላት እንኳን ደህና መጡ።</>, successBody: "የመጀመሪያውን MODO ጨረፍታ በቅርቡ እናጋራዎታለን።", addAnother: "ሌላ ሰው ይጨምሩ", footer: "ለሕይወት ቦታ የሚያዘጋጅ የቤት ዕቃ።", privateArea: "የአባላት የግል ክፍል", validation: "እባክዎ ሙሉ ስምዎንና ስልክ ቁጥርዎን ያስገቡ።", error: "ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    // Navigation
+    idea: "ሀሳቡ",
+    founding: "የመጀመሪያ አባላት",
+    login: "የቤተሰብ መግቢያ",
+    themeLight: "ብርሃን",
+    themeDark: "ጨለማ",
+
+    // Hero Section
+    designed: "በአዲስ አበባ የተነደፈ",
+    intro: "ከዕለት ተዕለት ሕይወትዎ፣ ከክፍልዎ እና ከአኗኗርዎ ጋር የሚለዋወጥ የቤት ዕቃ።",
+    join: "መስራች ቤተሰብ ይሁኑ",
+    note: "ለትንንሽ ክፍሎች። ለዘመናዊ ህይወት።",
+    folds: "ይታጠፋል",
+    stays: "ውበቱን ይጠብቃል",
+    caption: <>ለጥናት/ስራ ቦታ፥ ለእረፍት/ጨዋታ፣<br />እና ትንሽ ተጨማሪ አቅም</>,
+    heroHighlightFold: "የሚታጠፍና ቦታ የሚቆጥብ",
+    heroHighlightAddis: "በጥንቃቄ የተሰራ",
+    heroBadgeFold: "የታጠፈ / የተሸሸገ",
+    heroBadgeWork: "የተዘረጋ / የሥራ ቦታ",
+    heroScroll: "ወደ ታች",
+
+    // Idea Section
+    ideaKicker: "የMODO ሀሳብ",
+    ideaTitle: <>አንድ ክፍል።<br /><span>ብዙ የህይወት</span><br />ገጽታዎች።</>,
+    ideaLead: "በአዲስ አበባ እያንዳንዱ ካሬ ሜትር የራሱ ዋጋ አለው። MODO ይህን የሚረዳ የቤት ዕቃ ይነድፋል።",
+    ideaBody: "እንዲከፈቱ፣ እንዲደበቁ፣ እንዲደረደሩ እና እንዲለወጡ የተነደፉ ዕቃዎችን እንሰራለን—ቤትዎ ከጠዋት ቡና ወደ እንግዳ፣ ከሥራ ወደ እረፍት፥ እና እንደገና ወደ ሌላ ቅርጽ እንዲሸጋገር።",
+    detailOne: "በደንብ የታሰበባቸው ዲዛይኖች",
+    detailTwo: " የተመረጠ ግብአት እና አሰራር",
+
+    // Preview Pillars
+    glimpse: "በጨረፍታ",
+    previewTitle: <>MODO ቦታን<br /><span>የሚቆጥብባቸው ሦስት መንገዶች።</span></>,
+    previewIntro: "ለዕለታዊ ህይወት እና ፍላጎትዎ የተነደፈ ስብስብ።",
+    fold: "መታጠፍ",
+    foldText: "ቦታ ሲፈልጉ የሚጠፋ የቤት ዕቃ።",
+    shift: "መቀየር",
+    shiftText: "ከሥራ ወደ እረፍት የሚሸጋገሩ ዕቃዎች።",
+    stay: "መቆየት",
+    stayText: "ለዕለታዊ ጥቅም የተነደፉ ቀላል ቅርጾች።",
+    collection: "ለሚመጣው የመጀመሪያ ስብስብ የያዝናቸው መነሻ ሃሳቦች።",
+    circle: "የመጀመሪያ አባላትን ይቀላቀሉ",
+
+    // Founding Member Waitlist Form
+    firstCircle: "ትንሽ መስራቾች ቡድን",
+    foundingTitle: <>የመጭው አጓጊ<br /><em>ነገር አካል ይሁኑ።</em></>,
+    foundingBody: "የመጀመሪያውን MODO ስብስብ ለማበርከት ትንሽ የመጀመሪያ አባላት ቡድን እየጋበዝን ነው። ቀድመው ይድረሱ፣ በማስተዋውቂያ ዋጋ ይግዙ፣ በምንሰራውም ላይ ይሳተፉ።",
+    invitation: "የቤተሰብ ግብዣ",
+    homeTitle: <>MODOን<br />የቤትዎ አካል ያድርጉ።</>,
+    fullName: "ሙሉ ስም",
+    phone: "ስልክ ቁጥር",
+    submit: "የመስራች ቤተሰብን ይቀላቀሉ",
+    saving: "ቦታዎ እየተያዘ ነው…",
+    telegram: "የMODO የመጀመሪያ ዜናዎችን በTelegram ይቀበሉ",
+    optionalHandle: "የTelegram ስም (አማራጭ)",
+    privacy: "አይጨነቁ! ለጥሩ የቤት ዕቃ ዜና ብቻ ነው።",
+    successLabel: "በዝርዝሩ ውስጥ ተካተዋል",
+    successTitle: <>ወደ መስራች<br />አባላት እንኳን ደህና መጡ።</>,
+    successBody: "የመጀመሪያውን MODO ምርት ሃሳብ በቅርቡ እናጋራዎታለን።",
+    addAnother: "ሌላ ሰው ይጋብዙ",
+
+    // Footer & Validation
+    footer: "ለሕይወት ተጨማሪ ቦታ የሚሰጥ የቤት ዕቃ።",
+    privateArea: "የአባላት ክፍል",
+    validation: "እባክዎ ሙሉ ስምዎንና ስልክ ቁጥርዎን ያስገቡ።",
+    error: "ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
   }
 } as const;
 
 export default function Home() {
+  const { theme, toggleTheme } = useTheme();
   const [language, setLanguage] = useState<Language>(() => (typeof window !== "undefined" && window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === "am" ? "am" : "en"));
   const content = copy[language];
   const [fullName, setFullName] = useState("");
@@ -45,6 +177,11 @@ export default function Home() {
   const [telegramStartUrl, setTelegramStartUrl] = useState<string | null>(null);
   const [heroMode, setHeroMode] = useState(0);
   const [previousHeroMode, setPreviousHeroMode] = useState(0);
+
+  // Before & After image states for interactive drag-slider
+  const [beforeImage, setBeforeImage] = useState<string | undefined>("/hero-before.jpg");
+  const [afterImage, setAfterImage] = useState<string | undefined>("/hero-after.jpg");
+
   const recordAnalytics = trpc.analytics.record.useMutation();
   const joinWaitlist = trpc.waitlist.join.useMutation({
     onSuccess: (result) => {
@@ -89,20 +226,35 @@ export default function Home() {
 
   return (
     <main className={`modo-site ${language === "am" ? "amharic-mode" : ""}`}>
-      <nav className="modo-nav" aria-label="Primary navigation">
-        <a className="modo-logo" href="#top" aria-label="MODO home">
-          <span className="modo-logo-mark">M</span>
-          <span>MODO</span>
-        </a>
-        <div className="modo-nav-links">
-          <a href="#idea">{content.idea}</a>
-          <a href="#founding">{content.founding}</a>
-        </div>
-        <button className="language-toggle" type="button" onClick={() => setLanguage(language === "en" ? "am" : "en")} aria-label={language === "en" ? "በአማርኛ ይመልከቱ" : "View in English"}><span className={language === "en" ? "active" : ""}>EN</span><span>/</span><span className={language === "am" ? "active" : ""}>አማ</span></button>
-        <button className="nav-login" type="button" onClick={() => { trackEvent("login-click"); startLogin(); }}>
-          {content.login} <ArrowUpRight size={15} strokeWidth={2.3} />
-        </button>
-      </nav>
+      <header className="modo-nav-header">
+        <nav className="modo-nav" aria-label="Primary navigation">
+          <a className="modo-logo" href="#top" aria-label="MODO home">
+            <span className="modo-logo-mark">M</span>
+            <span>MODO</span>
+          </a>
+          <div className="modo-nav-links">
+            <a href="#idea">{content.idea}</a>
+            <a href="#founding">{content.founding}</a>
+          </div>
+          <button className="language-toggle" type="button" onClick={() => setLanguage(language === "en" ? "am" : "en")} aria-label={language === "en" ? "በአማርኛ ይመልከቱ" : "View in English"}><span className={language === "en" ? "active" : ""}>EN</span><span>/</span><span className={language === "am" ? "active" : ""}>አማ</span></button>
+          <button
+            className="theme-toggle"
+            type="button"
+            onClick={() => {
+              trackEvent("theme-toggle", { theme: theme === "dark" ? "light" : "dark" });
+              toggleTheme();
+            }}
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          >
+            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            <span>{theme === "dark" ? content.themeLight : content.themeDark}</span>
+          </button>
+          <button className="nav-login" type="button" onClick={() => { trackEvent("login-click"); startLogin(); }}>
+            {content.login} <ArrowUpRight size={15} strokeWidth={2.3} />
+          </button>
+        </nav>
+      </header>
 
       <section className="modo-hero" id="top">
         <div className="hero-copy">
@@ -112,20 +264,37 @@ export default function Home() {
           <a className="hero-cta" href="#founding" onClick={() => trackEvent("hero-cta-click")}>
             {content.join} <ArrowUpRight size={18} />
           </a>
+          <div className="hero-highlights">
+            <div className="highlight-item">
+              <span className="highlight-num">01</span>
+              <span className="highlight-text">{content.heroHighlightFold}</span>
+            </div>
+            <div className="highlight-item">
+              <span className="highlight-num">02</span>
+              <span className="highlight-text">{content.heroHighlightAddis}</span>
+            </div>
+          </div>
           <div className="hero-note"><span>01</span><span>{content.note}</span></div>
         </div>
-        <div className="hero-visual" aria-label="Abstract illustration of adaptable furniture" role="img">
-          <div className="sun-disc" />
-          <div className="room-line room-line-one" />
-          <div className="room-line room-line-two" />
-          <div className="chair-form chair-back" />
-          <div className="chair-form chair-seat" />
-          <div className="chair-form chair-leg chair-leg-one" />
-          <div className="chair-form chair-leg chair-leg-two" />
-          <div className="floating-label label-fold"><Move3D size={14} /> {content.folds}</div>
-          <div className="floating-label label-soft"><Sparkles size={14} /> {content.stays}</div>
-          <div className="hero-caption">{content.caption}</div>
+
+        <div className="hero-visual-container">
+          <BeforeAfterSlider
+            beforeImage={beforeImage}
+            afterImage={afterImage}
+            beforeLabel={content.heroBadgeFold}
+            afterLabel={content.heroBadgeWork}
+          />
         </div>
+
+        <a
+          href="#idea"
+          className="hero-scroll-nudge"
+          aria-label="Scroll down to explore"
+          onClick={() => trackEvent("scroll-nudge-click")}
+        >
+          <span>{content.heroScroll}</span>
+          <ChevronDown size={16} className="nudge-icon" />
+        </a>
       </section>
 
       <section className="idea-section" id="idea">
@@ -149,9 +318,38 @@ export default function Home() {
         <div className="section-kicker">{content.glimpse} <span>03</span></div>
         <div className="preview-heading"><h2 id="preview-title">{content.previewTitle}</h2><p>{content.previewIntro}</p></div>
         <div className="preview-grid">
-          <article className="preview-card preview-fold"><div className="preview-shape"><span /></div><div className="preview-card-copy"><span className="preview-number">01</span><h3>{content.fold}</h3><p>{content.foldText}</p></div></article>
-          <article className="preview-card preview-shift"><div className="preview-shape"><span /><span /></div><div className="preview-card-copy"><span className="preview-number">02</span><h3>{content.shift}</h3><p>{content.shiftText}</p></div></article>
-          <article className="preview-card preview-stay"><div className="preview-shape"><span /></div><div className="preview-card-copy"><span className="preview-number">03</span><h3>{content.stay}</h3><p>{content.stayText}</p></div></article>
+          <article className="preview-card preview-fold">
+            <div className="preview-image-wrap">
+              <img src="/pillar-fold.jpg" alt="MODO Fold - Drop-leaf dining table with stowed chairs" />
+            </div>
+            <div className="preview-card-copy">
+              <span className="preview-number">01</span>
+              <h3>{content.fold}</h3>
+              <p>{content.foldText}</p>
+            </div>
+          </article>
+
+          <article className="preview-card preview-shift">
+            <div className="preview-image-wrap">
+              <img src="/pillar-shift.jpg" alt="MODO Shift - Wall-mounted daybed and shelving unit" />
+            </div>
+            <div className="preview-card-copy">
+              <span className="preview-number">02</span>
+              <h3>{content.shift}</h3>
+              <p>{content.shiftText}</p>
+            </div>
+          </article>
+
+          <article className="preview-card preview-stay">
+            <div className="preview-image-wrap">
+              <img src="/pillar-stay.jpg" alt="MODO Stay - Mobile wooden wardrobe organizer shelf" />
+            </div>
+            <div className="preview-card-copy">
+              <span className="preview-number">03</span>
+              <h3>{content.stay}</h3>
+              <p>{content.stayText}</p>
+            </div>
+          </article>
         </div>
         <p className="preview-footnote">{content.collection} <a href="#founding">{content.circle} <ArrowUpRight size={14} /></a></p>
       </section>
