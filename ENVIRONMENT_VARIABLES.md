@@ -25,15 +25,19 @@ Configure these in the Vercel project settings. Use separate Preview and Product
 | `TELEGRAM_ADMIN_CHAT_ID` | Founder/admin notification chat ID |
 | `TELEGRAM_INVITE_LINK` | Private Founder’s Circle invite link |
 | `TELEGRAM_WEBHOOK_SECRET` | Telegram webhook secret header value |
-| `DATABASE_URL` | Current persistence connection; retained until the Blob repository migration is merged |
-| `BLOB_READ_WRITE_TOKEN` | Automatically supplied when the Vercel Blob store is connected |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint supplied by the Vercel integration |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token supplied by the Vercel integration |
+| `KV_REST_API_URL` | Legacy Upstash/Vercel integration alias accepted as a fallback |
+| `KV_REST_API_TOKEN` | Legacy Upstash/Vercel integration alias accepted as a fallback |
 
 ## Vercel setup
 
 1. Import this repository into a private GitHub repository.
 2. Import the GitHub repository into Vercel.
 3. Set the framework to **Vite**; `vercel.json` supplies the build/output settings.
-4. Connect the private Blob store to Preview and Production so `BLOB_READ_WRITE_TOKEN` is injected.
+4. Install the Upstash Redis integration and connect a Redis database to Preview and Production so the Redis REST variables are injected.
 5. Add Manus OAuth redirect configuration for `https://YOUR_DOMAIN/api/oauth/callback`.
 6. Set the Telegram webhook to `https://YOUR_DOMAIN/api/telegram/webhook` with the matching secret header.
 7. Keep Preview and Production secrets separate.
+
+The application stores users, waitlist entries, Telegram onboarding state, and analytics in Upstash Redis. Vercel Blob is not required for application persistence and may be reserved for future file assets.

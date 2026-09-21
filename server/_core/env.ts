@@ -1,7 +1,8 @@
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
+  redisRestUrl: process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL ?? "",
+  redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN ?? "",
   publicUrl: process.env.MODO_PUBLIC_URL ?? "",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramAdminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID ?? "",

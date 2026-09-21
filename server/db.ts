@@ -1,73 +1,111 @@
-import { desc, eq, gte } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { Redis } from "@upstash/redis";
 import { nanoid } from "nanoid";
-import { AnalyticsEvent, InsertUser, InsertWaitlistEntry, analyticsEvents, users, waitlistEntries } from "../drizzle/schema";
+import type { AnalyticsEvent, InsertUser, InsertWaitlistEntry, User, WaitlistEntry } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+const KEY_PREFIX = "modo";
+const userKey = (openId: string) => `${KEY_PREFIX}:user:${openId}`;
+const waitlistKey = (id: number) => `${KEY_PREFIX}:waitlist:${id}`;
+const deepLinkKey = (token: string) => `${KEY_PREFIX}:waitlist:deep-link:${token}`;
+const telegramKey = (telegramUserId: string) => `${KEY_PREFIX}:waitlist:telegram:${telegramUserId}`;
+const analyticsKey = (id: number) => `${KEY_PREFIX}:analytics:${id}`;
+const waitlistIndexKey = `${KEY_PREFIX}:waitlist:created`;
+const analyticsIndexKey = `${KEY_PREFIX}:analytics:created`;
+const waitlistSequenceKey = `${KEY_PREFIX}:sequence:waitlist`;
+const analyticsSequenceKey = `${KEY_PREFIX}:sequence:analytics`;
 
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+let _redis: Redis | null = null;
+
+function getRedis() {
+  if (!_redis) {
+    const url = ENV.redisRestUrl;
+    const token = ENV.redisRestToken;
+    if (!url || !token) {
+      throw new Error("Upstash Redis is not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
     }
+    _redis = new Redis({ url, token });
   }
-  return _db;
+  return _redis;
+}
+
+function reviveDate(value: unknown): Date {
+  return value instanceof Date ? value : new Date(String(value));
+}
+
+function reviveUser(value: User): User {
+  return {
+    ...value,
+    createdAt: reviveDate(value.createdAt),
+    updatedAt: reviveDate(value.updatedAt),
+    lastSignedIn: reviveDate(value.lastSignedIn),
+  };
+}
+
+function reviveWaitlist(value: WaitlistEntry): WaitlistEntry {
+  return {
+    ...value,
+    createdAt: reviveDate(value.createdAt),
+    telegramLinkedAt: value.telegramLinkedAt ? reviveDate(value.telegramLinkedAt) : null,
+    joinRequestedAt: value.joinRequestedAt ? reviveDate(value.joinRequestedAt) : null,
+    joinedAt: value.joinedAt ? reviveDate(value.joinedAt) : null,
+  };
+}
+
+function reviveAnalytics(value: AnalyticsEvent): AnalyticsEvent {
+  return { ...value, createdAt: reviveDate(value.createdAt) };
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
 
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  const values: InsertUser = { openId: user.openId };
-  const updateSet: Record<string, unknown> = {};
-  const textFields = ["name", "email", "loginMethod"] as const;
-
-  for (const field of textFields) {
-    if (user[field] !== undefined) {
-      values[field] = user[field] ?? null;
-      updateSet[field] = user[field] ?? null;
-    }
-  }
-  if (user.lastSignedIn !== undefined) {
-    values.lastSignedIn = user.lastSignedIn;
-    updateSet.lastSignedIn = user.lastSignedIn;
-  }
-  if (user.role !== undefined) {
-    values.role = user.role;
-    updateSet.role = user.role;
-  } else if (user.openId === ENV.ownerOpenId) {
-    values.role = "admin";
-    updateSet.role = "admin";
-  }
-  if (!values.lastSignedIn) values.lastSignedIn = new Date();
-  if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  const redis = getRedis();
+  const existing = await redis.get<User>(userKey(user.openId));
+  const now = new Date();
+  const merged: User = {
+    id: existing?.id ?? await redis.incr(`${KEY_PREFIX}:sequence:user`),
+    openId: user.openId,
+    name: user.name !== undefined ? user.name : existing?.name ?? null,
+    email: user.email !== undefined ? user.email : existing?.email ?? null,
+    loginMethod: user.loginMethod !== undefined ? user.loginMethod : existing?.loginMethod ?? null,
+    role: user.role ?? (user.openId === ENV.ownerOpenId ? "admin" : existing?.role ?? "user"),
+    createdAt: existing?.createdAt ? reviveDate(existing.createdAt) : now,
+    updatedAt: now,
+    lastSignedIn: user.lastSignedIn ? reviveDate(user.lastSignedIn) : now,
+  };
+  await redis.set(userKey(user.openId), merged);
 }
 
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result[0];
+export async function getUserByOpenId(openId: string): Promise<User | undefined> {
+  const value = await getRedis().get<User>(userKey(openId));
+  return value ? reviveUser(value) : undefined;
 }
 
 export async function createWaitlistEntry(entry: InsertWaitlistEntry) {
-  const db = await getDb();
-  if (!db) throw new Error("Database is not available");
+  const redis = getRedis();
+  const id = await redis.incr(waitlistSequenceKey);
   const deepLinkToken = entry.deepLinkToken ?? nanoid(16);
-  const phone = normalizeEthiopianPhone(entry.phone);
-  const result = await db.insert(waitlistEntries).values({ ...entry, phone, deepLinkToken });
-  return { success: true, id: Number((result as { insertId?: number }).insertId ?? 0), deepLinkToken } as const;
+  const createdAt = new Date();
+  const waitlistEntry: WaitlistEntry = {
+    id,
+    fullName: entry.fullName,
+    phone: normalizeEthiopianPhone(entry.phone),
+    telegramOptIn: entry.telegramOptIn ?? false,
+    telegramHandle: entry.telegramHandle ?? null,
+    notificationPreference: entry.notificationPreference ?? "phone",
+    onboardingStatus: entry.onboardingStatus ?? "PENDING_TG",
+    deepLinkToken,
+    telegramUserId: entry.telegramUserId ?? null,
+    telegramChatId: entry.telegramChatId ?? null,
+    telegramLinkedAt: entry.telegramLinkedAt ?? null,
+    joinRequestedAt: entry.joinRequestedAt ?? null,
+    joinedAt: entry.joinedAt ?? null,
+    createdAt,
+  };
+
+  await redis.set(waitlistKey(id), waitlistEntry);
+  await redis.set(deepLinkKey(deepLinkToken), String(id));
+  await redis.zadd(waitlistIndexKey, { score: createdAt.getTime(), member: String(id) });
+  return { success: true, id, deepLinkToken } as const;
 }
 
 export function normalizeEthiopianPhone(phone: string) {
@@ -78,57 +116,88 @@ export function normalizeEthiopianPhone(phone: string) {
 }
 
 export async function getWaitlistByDeepLinkToken(deepLinkToken: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(waitlistEntries).where(eq(waitlistEntries.deepLinkToken, deepLinkToken)).limit(1);
-  return result[0];
+  const id = await getRedis().get<string>(deepLinkKey(deepLinkToken));
+  if (!id) return undefined;
+  return getWaitlistById(Number(id));
 }
 
 export async function getWaitlistByTelegramUserId(telegramUserId: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(waitlistEntries).where(eq(waitlistEntries.telegramUserId, telegramUserId)).limit(1);
-  return result[0];
+  const id = await getRedis().get<string>(telegramKey(telegramUserId));
+  if (!id) return undefined;
+  return getWaitlistById(Number(id));
+}
+
+async function getWaitlistById(id: number): Promise<WaitlistEntry | undefined> {
+  const value = await getRedis().get<WaitlistEntry>(waitlistKey(id));
+  return value ? reviveWaitlist(value) : undefined;
+}
+
+async function saveWaitlistEntry(entry: WaitlistEntry) {
+  await getRedis().set(waitlistKey(entry.id), entry);
 }
 
 export async function linkTelegramAccount(id: number, telegramUserId: string, telegramChatId: string, telegramHandle?: string | null) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(waitlistEntries).set({ telegramUserId, telegramChatId, telegramHandle: telegramHandle ?? undefined, telegramLinkedAt: new Date() }).where(eq(waitlistEntries.id, id));
+  const entry = await getWaitlistById(id);
+  if (!entry) return;
+  const updated: WaitlistEntry = {
+    ...entry,
+    telegramUserId,
+    telegramChatId,
+    telegramHandle: telegramHandle ?? null,
+    telegramLinkedAt: new Date(),
+  };
+  await saveWaitlistEntry(updated);
+  await getRedis().set(telegramKey(telegramUserId), String(id));
 }
 
 export async function markJoinRequested(id: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(waitlistEntries).set({ onboardingStatus: "JOIN_REQUESTED", joinRequestedAt: new Date() }).where(eq(waitlistEntries.id, id));
+  const entry = await getWaitlistById(id);
+  if (!entry) return;
+  await saveWaitlistEntry({ ...entry, onboardingStatus: "JOIN_REQUESTED", joinRequestedAt: new Date() });
 }
 
 export async function markTelegramJoined(telegramUserId: string) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(waitlistEntries).set({ onboardingStatus: "JOINED_TG", joinedAt: new Date() }).where(eq(waitlistEntries.telegramUserId, telegramUserId));
+  const entry = await getWaitlistByTelegramUserId(telegramUserId);
+  if (!entry) return;
+  await saveWaitlistEntry({ ...entry, onboardingStatus: "JOINED_TG", joinedAt: new Date() });
 }
 
-export async function listWaitlistEntries() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(waitlistEntries).orderBy(desc(waitlistEntries.createdAt));
+export async function listWaitlistEntries(): Promise<WaitlistEntry[]> {
+  const ids = await getRedis().zrange<string[]>(waitlistIndexKey, 0, -1, { rev: true });
+  const entries = await Promise.all(ids.map((id) => getWaitlistById(Number(id))));
+  return entries.filter((entry): entry is WaitlistEntry => Boolean(entry));
 }
 
 export async function createAnalyticsEvent(event: Omit<AnalyticsEvent, "id" | "createdAt">) {
-  const db = await getDb();
-  if (!db) return { success: false } as const;
-  await db.insert(analyticsEvents).values(event);
+  const redis = getRedis();
+  const id = await redis.incr(analyticsSequenceKey);
+  const createdAt = new Date();
+  const analyticsEvent: AnalyticsEvent = { ...event, id, createdAt };
+  await redis.set(analyticsKey(id), analyticsEvent);
+  await redis.zadd(analyticsIndexKey, { score: createdAt.getTime(), member: String(id) });
   return { success: true } as const;
 }
 
 export async function getAnalyticsSummary(since: Date) {
-  const db = await getDb();
-  if (!db) return { totalViews: 0, waitlistSignups: 0, sources: [], browsers: [], locations: [], recentEvents: [] };
-  const events = await db.select().from(analyticsEvents).where(gte(analyticsEvents.createdAt, since)).orderBy(desc(analyticsEvents.createdAt));
-  const signups = await db.select().from(waitlistEntries).where(gte(waitlistEntries.createdAt, since));
+  const redis = getRedis();
+  const ids = await redis.zrange<string[]>(analyticsIndexKey, Date.now(), since.getTime(), { byScore: true, rev: true });
+  const events = (await Promise.all(ids.map(async (id) => {
+    const event = await redis.get<AnalyticsEvent>(analyticsKey(Number(id)));
+    return event ? reviveAnalytics(event) : undefined;
+  }))).filter((event): event is AnalyticsEvent => Boolean(event));
+  const signups = (await listWaitlistEntries()).filter((entry) => entry.createdAt >= since);
   const pageViews = events.filter((event) => event.eventName === "page-view");
-  const countBy = (key: "source" | "browser" | "location") => Object.entries(pageViews.reduce<Record<string, number>>((acc, event) => { acc[event[key]] = (acc[event[key]] ?? 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count }))
-    .slice(0, 8);
-  return { totalViews: pageViews.length, waitlistSignups: signups.length, sources: countBy("source"), browsers: countBy("browser"), locations: countBy("location"), recentEvents: events.slice(0, 12) };
+  const countBy = (key: "source" | "browser" | "location") => Object.entries(pageViews.reduce<Record<string, number>>((acc, event) => {
+    acc[event[key]] = (acc[event[key]] ?? 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count })).slice(0, 8);
+
+  return {
+    totalViews: pageViews.length,
+    waitlistSignups: signups.length,
+    sources: countBy("source"),
+    browsers: countBy("browser"),
+    locations: countBy("location"),
+    recentEvents: events.slice(0, 12),
+  };
 }
