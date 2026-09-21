@@ -123,14 +123,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 .modo-site { overflow-x: clip; position: relative; }
 .modo-nav-header { position: sticky; top: 0; z-index: 100; width: 100%; background: rgba(245, 242, 234, 0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
-.modo-nav { align-items: center; display: flex; height: 78px; justify-content: space-between; margin: 0 auto; max-width: 1440px; padding: 0 5.8vw; }
+.modo-nav { align-items: center; display: flex; height: 78px; justify-content: space-between; margin: 0 auto; max-width: 1600px; padding: 0 5.8vw; }
 .modo-logo { align-items: center; display: inline-flex; font-size: 15px; font-weight: 800; gap: 9px; letter-spacing: .17em; }
 .modo-logo-mark { align-items: center; background: var(--ink); color: var(--cream); display: inline-flex; font-family: var(--display); font-size: 18px; height: 29px; justify-content: center; letter-spacing: 0; width: 29px; }
 .modo-nav-links { display: flex; font-size: 12px; gap: 30px; letter-spacing: .03em; margin-left: 12%; }
 .modo-nav-links a, .modo-footer button { transition: color 160ms ease, transform 160ms ease; }
 .modo-nav-links a:hover, .modo-footer button:hover { color: var(--rust); }
 
-.modo-hero { display: grid; grid-template-columns: minmax(360px, 0.85fr) minmax(460px, 1.15fr); height: calc(100dvh - 78px); min-height: calc(100dvh - 78px); max-height: calc(100dvh - 78px); max-width: 1440px; margin: 0 auto; padding: 20px 5.8vw 28px; position: relative; overflow: hidden; gap: 3rem; align-items: center; }
+.modo-hero { display: grid; grid-template-columns: minmax(320px, 0.55fr) minmax(460px, 1.45fr); height: calc(100dvh - 78px); min-height: calc(100dvh - 78px); max-height: calc(100dvh - 78px); max-width: 1600px; margin: 0 auto; padding: 20px 5.8vw 28px; position: relative; overflow: hidden; gap: 3rem; align-items: center; }
 .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 10px 0; position: relative; z-index: 2; width: 100%; }
 .eyebrow { align-items: center; color: var(--olive-dark); display: flex; font-family: var(--mono); font-size: 10px; gap: 9px; letter-spacing: .09em; margin: 0 0 20px; text-transform: uppercase; }
 .eyebrow-dot { background: var(--rust); border-radius: 50%; display: block; height: 7px; width: 7px; }
@@ -161,7 +161,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .hero-note { align-items: center; color: var(--ink-soft); display: flex; font-family: var(--mono); font-size: 9px; gap: 14px; letter-spacing: .04em; margin-top: 20px; text-transform: uppercase; }
 .hero-note span:first-child { color: var(--rust); }
 
-.hero-visual-container { height: 100%; max-height: calc(100dvh - 78px - 48px); width: 100%; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--olive); box-shadow: 0 16px 40px -12px rgba(31, 41, 35, 0.12); }
+.hero-visual-container { aspect-ratio: 1376 / 768; max-height: calc(100dvh - 78px - 48px); width: 100%; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--olive); box-shadow: 0 16px 40px -12px rgba(31, 41, 35, 0.12); }
 
 .hero-scroll-nudge { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 30; display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); background: rgba(251, 250, 246, 0.88); backdrop-filter: blur(8px); padding: 8px 16px; border-radius: 9999px; border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(31, 41, 35, 0.08); transition: all 200ms ease; cursor: pointer; text-decoration: none; }
 .hero-scroll-nudge:hover { background: var(--paper); color: var(--rust); transform: translateX(-50%) translateY(-2px); box-shadow: 0 6px 20px rgba(31, 41, 35, 0.12); }
@@ -260,6 +260,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .waitlist-card { grid-column: 2; margin-top: 0; }
 }
 
+/* Tablet: same stacked layout as mobile, with the image at its natural landscape ratio */
+@media (max-width: 1024px) {
+  .modo-hero { display: flex; flex-direction: column; height: auto; min-height: 0; max-height: none; overflow: visible; padding: 24px 6vw 40px; gap: 28px; align-items: stretch; }
+  .hero-copy { padding: 10px 0 0; }
+  .hero-copy h1 { font-size: clamp(38px, 6vw, 54px); max-width: 100%; }
+  .hero-intro { font-size: 15px; max-width: 520px; }
+  .hero-visual-container { max-height: none; }
+  .hero-scroll-nudge { display: none; }
+}
+
 @media (max-width: 700px) {
   .modo-nav { height: 68px; padding: 0 20px; }
   .modo-nav-links { display: none; }
@@ -268,7 +278,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .hero-copy h1 { font-size: clamp(32px, 8.5vw, 42px); max-width: 100%; }
   .hero-intro { font-size: 13px; margin: 12px 0 16px; }
   .hero-note { margin-top: 16px; }
-  .hero-visual-container { height: 340px; min-height: 300px; width: 100%; border-radius: 12px; border: 1px solid var(--line); margin-top: 8px; }
+  .hero-visual-container { aspect-ratio: auto; height: 340px; min-height: 300px; width: 100%; border-radius: 12px; border: 1px solid var(--line); margin-top: 8px; }
   .hero-scroll-nudge { display: none; }
   .idea-section { padding: 60px 20px 68px; }
   .idea-grid { display: block; margin-top: 45px; }
