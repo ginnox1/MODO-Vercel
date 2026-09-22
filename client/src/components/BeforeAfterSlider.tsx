@@ -6,6 +6,7 @@ interface BeforeAfterSliderProps {
   afterImage?: string;
   beforeLabel?: string;
   afterLabel?: string;
+  conceptLabel?: string;
   className?: string;
 }
 
@@ -14,11 +15,24 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
   afterImage,
   beforeLabel = "Compact Mode",
   afterLabel = "Expanded Mode",
+  conceptLabel,
   className = "",
 }) => {
   const [sliderPosition, setSliderPosition] = useState<number>(50); // percentage 0 - 100
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerWidth(el.getBoundingClientRect().width);
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleMove = useCallback((clientX: number) => {
     if (!containerRef.current) return;
@@ -72,7 +86,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full min-h-[340px] md:min-h-[460px] overflow-hidden select-none group rounded-md ${className}`}
+      className={`relative w-full h-full min-h-[340px] overflow-hidden select-none group rounded-md ${className}`}
       style={{ touchAction: "none" }}
       onMouseDown={(e) => {
         setIsDragging(true);
@@ -117,15 +131,15 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
 
       {/* BEFORE LAYER (CLIPPED TOP LAYER / COMPACT STATE) */}
       <div
-        className="absolute inset-0 h-full overflow-hidden bg-[#384131] border-r border-[#bb6849]/50 shadow-2xl transition-[width] duration-75 ease-out"
+        className={`absolute inset-0 h-full overflow-hidden bg-[#384131] border-r border-[#bb6849]/50 shadow-2xl ${
+          isDragging ? "" : "transition-[width] duration-75 ease-out"
+        }`}
         style={{ width: `${sliderPosition}%` }}
       >
         <div
-          className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden"
+          className="absolute inset-0 h-full flex items-center justify-center overflow-hidden"
           style={{
-            width: containerRef.current
-              ? `${containerRef.current.getBoundingClientRect().width}px`
-              : "100vw",
+            width: containerWidth ? `${containerWidth}px` : "100vw",
           }}
         >
           {beforeImage ? (
@@ -161,7 +175,9 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
 
       {/* SLIDER HANDLE LINE & KNOB */}
       <div
-        className="absolute top-0 bottom-0 w-1 bg-[#f5f2ea] shadow-[0_0_14px_rgba(0,0,0,0.5)] pointer-events-none transition-[left] duration-75 ease-out z-20"
+        className={`absolute top-0 bottom-0 w-1 bg-[#f5f2ea] shadow-[0_0_14px_rgba(0,0,0,0.5)] pointer-events-none z-20 ${
+          isDragging ? "" : "transition-[left] duration-75 ease-out"
+        }`}
         style={{ left: `calc(${sliderPosition}% - 2px)` }}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 rounded-full bg-[#1f2923] text-[#f5f2ea] border-2 border-[#f5f2ea] shadow-2xl flex items-center justify-center cursor-ew-resize transition-transform duration-150 group-hover:scale-110 active:scale-95">
@@ -175,6 +191,15 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           Drag to compare
         </span>
       </div>
+
+      {/* CONCEPT VISUALIZATION DISCLOSURE BADGE */}
+      {conceptLabel && (
+        <div className="absolute bottom-12 right-3 md:bottom-4 md:right-4 z-10 pointer-events-none">
+          <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-[#1f2923]/50 text-[#f5f2ea]/70 text-[8px] md:text-[9px] font-mono tracking-wide md:tracking-widest uppercase backdrop-blur-sm border border-white/10 shadow-sm">
+            {conceptLabel}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

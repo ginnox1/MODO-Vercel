@@ -47,6 +47,7 @@ const copy = {
     heroHighlightAddis: "Crafted with Care",
     heroBadgeFold: "Foldable & Space-saving",
     heroBadgeWork: "Unfolds as Workspace",
+    heroConceptLabel: "Concept Visualization",
     heroScroll: "Scroll to explore",
 
     // Idea Section
@@ -113,6 +114,7 @@ const copy = {
     heroHighlightAddis: "በጥንቃቄ የተሰራ",
     heroBadgeFold: "የታጠፈ / የተሸሸገ",
     heroBadgeWork: "የተዘረጋ / የሥራ ቦታ",
+    heroConceptLabel: "የፅንሰ-ሀሳብ ምስል",
     heroScroll: "ወደ ታች",
 
     // Idea Section
@@ -278,6 +280,7 @@ export default function Home() {
             afterImage={afterImage}
             beforeLabel={content.heroBadgeFold}
             afterLabel={content.heroBadgeWork}
+            conceptLabel={content.heroConceptLabel}
           />
         </div>
 
